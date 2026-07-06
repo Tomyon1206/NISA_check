@@ -43,5 +43,19 @@ export function useHoldings() {
     })
   }, [])
 
-  return { holdings, addHolding, updateHolding, removeHolding }
+  /**
+   * インポートしたデータを取り込む。
+   * mode: 'replace' で既存データを置き換え、'merge' で既存データに追加する。
+   * どちらの場合もID衝突を避けるためIDを振り直す。
+   */
+  const importHoldings = useCallback((imported: Holding[], mode: 'replace' | 'merge') => {
+    setHoldings((prev) => {
+      const withNewIds = imported.map((h) => ({ ...h, id: crypto.randomUUID() }))
+      const next = mode === 'replace' ? withNewIds : [...prev, ...withNewIds]
+      saveToStorage(next)
+      return next
+    })
+  }, [])
+
+  return { holdings, addHolding, updateHolding, removeHolding, importHoldings }
 }

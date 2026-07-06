@@ -4,11 +4,12 @@ import { HoldingCard } from './components/HoldingCard'
 import { HoldingForm } from './components/HoldingForm'
 import { Summary } from './components/Summary'
 import { NisaGauge } from './components/NisaGauge'
+import { DataActions } from './components/DataActions'
 import { calcPortfolioSummary, calcNisaUsage } from './utils/calculations'
 import './index.css'
 
 export default function App() {
-  const { holdings, addHolding, updateHolding, removeHolding } = useHoldings()
+  const { holdings, addHolding, updateHolding, removeHolding, importHoldings } = useHoldings()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -85,6 +86,8 @@ export default function App() {
             <button className="btn-primary" onClick={() => setShowForm(true)}>最初の銘柄を追加する</button>
           </div>
         )}
+
+        <DataActions holdings={holdings} onImport={importHoldings} />
       </main>
     </div>
   )
