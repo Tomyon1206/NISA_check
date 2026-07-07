@@ -55,6 +55,7 @@ export default function App() {
           <div className="modal-overlay" onClick={() => setShowForm(false)}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
               <HoldingForm
+                existingHoldings={holdings.filter((h) => h.id !== editingId)}
                 onAdd={handleFormAdd}
                 onCancel={() => { setShowForm(false); setEditingId(null) }}
               />
@@ -75,6 +76,7 @@ export default function App() {
                     holding={h}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onUpdatePrice={(id, price) => updateHolding(id, { currentPrice: price })}
                   />
                 ))}
               </div>

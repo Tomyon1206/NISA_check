@@ -23,9 +23,15 @@ function ProgressBar({ used, limit, label }: { used: number; limit: number; labe
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="progress-remaining">
-        残り <strong>{formatCurrency(remaining)}</strong>
-      </div>
+      {isOver ? (
+        <p className="progress-error" role="alert">
+          ⚠ 上限を{formatCurrency(used - limit)}超過しています
+        </p>
+      ) : (
+        <div className="progress-remaining">
+          残り <strong>{formatCurrency(remaining)}</strong>
+        </div>
+      )}
     </div>
   )
 }

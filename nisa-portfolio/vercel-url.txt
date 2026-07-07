@@ -1,0 +1,19 @@
+NISAポートフォリオ管理アプリ - Vercelデプロイ情報
+
+本番URL: https://nisa-check.vercel.app
+
+その他のドメイン:
+- https://nisa-check-tomyon-s-projects.vercel.app
+- https://nisa-check-git-main-tomyon-s-projects.vercel.app
+
+最新デプロイ（本番 / main）:
+- コミット: a62d1452cbba7852ed7eeb7a63f60e48b141edba（cleanup: ルート package-lock.json を削除・除外）
+- 状態: READY（Root Directory修正後にRedeploy済み、ビルド成功を確認）
+
+検証環境（devlop）URL: https://nisa-check-git-devlop-tomyon-s-projects.vercel.app
+
+最新デプロイ（検証 / devlop）:
+- コミット: a07e05d603a842c5fdffd54d413fb1c34cbef45b（Update Ver0.1）
+- 状態: READY（Root Directory修正後にRedeploy済み、ビルド成功を確認）
+
+確認日時: 2026-07-07

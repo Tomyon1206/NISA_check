@@ -3,6 +3,8 @@ import {
   calcProfitLoss,
   calcPortfolioSummary,
   calcNisaUsage,
+  calcProjectedNisaUsage,
+  isOverNisaLimit,
   formatCurrency,
   formatPercent,
 } from './calculations'
@@ -82,6 +84,47 @@ describe('calcNisaUsage', () => {
     const result = calcNisaUsage(holdings, 2026)
     expect(result.growthUsed).toBe(0)
     expect(result.tsumitateUsed).toBe(0)
+  })
+})
+
+describe('calcProjectedNisaUsage', () => {
+  it('新規購入を既存の枠使用額に加算する', () => {
+    const holdings = [
+      makeHolding({ id: '1', nisaType: 'growth', quantity: 10, purchasePrice: 1000, purchaseDate: '2026-01-01' }),
+    ]
+    const result = calcProjectedNisaUsage(holdings, 2026, { nisaType: 'growth', amount: 500_000 })
+    expect(result.growthUsed).toBe(10_000 + 500_000)
+    expect(result.tsumitateUsed).toBe(0)
+  })
+
+  it('nisaTypeが異なる場合はそれぞれ独立して加算される', () => {
+    const holdings: Holding[] = []
+    const result = calcProjectedNisaUsage(holdings, 2026, { nisaType: 'tsumitate', amount: 300_000 })
+    expect(result.growthUsed).toBe(0)
+    expect(result.tsumitateUsed).toBe(300_000)
+  })
+})
+
+describe('isOverNisaLimit', () => {
+  it('いずれの枠も上限以内ならすべてfalseを返す', () => {
+    const result = isOverNisaLimit({ growthUsed: 1_000_000, tsumitateUsed: 500_000 })
+    expect(result).toEqual({ growth: false, tsumitate: false, total: false })
+  })
+
+  it('成長投資枠の上限（240万円）を超えるとgrowthがtrueになる', () => {
+    const result = isOverNisaLimit({ growthUsed: 2_400_001, tsumitateUsed: 0 })
+    expect(result.growth).toBe(true)
+    expect(result.tsumitate).toBe(false)
+  })
+
+  it('つみたて投資枠の上限（120万円）を超えるとtsumitateがtrueになる', () => {
+    const result = isOverNisaLimit({ growthUsed: 0, tsumitateUsed: 1_200_001 })
+    expect(result.tsumitate).toBe(true)
+  })
+
+  it('合計（360万円）を超えるとtotalがtrueになる', () => {
+    const result = isOverNisaLimit({ growthUsed: 2_400_000, tsumitateUsed: 1_200_001 })
+    expect(result.total).toBe(true)
   })
 })
 

@@ -1,4 +1,5 @@
-import type { Holding } from '../types'
+import type { Holding, NisaType } from '../types'
+import { NISA_LIMITS } from '../types'
 
 export function calcProfitLoss(holding: Holding) {
   const cost = holding.purchasePrice * holding.quantity
@@ -25,6 +26,31 @@ export function calcNisaUsage(holdings: Holding[], year: number) {
     .filter((h) => h.nisaType === 'tsumitate')
     .reduce((sum, h) => sum + h.purchasePrice * h.quantity, 0)
   return { growthUsed, tsumitateUsed }
+}
+
+/**
+ * 既存の保有銘柄に、新規購入（nisaType・金額）を加えた場合のNISA枠使用額を試算する。
+ * フォーム入力時点でまだ保存していない銘柄の枠超過チェックに使う。
+ */
+export function calcProjectedNisaUsage(
+  holdings: Holding[],
+  year: number,
+  addition: { nisaType: NisaType; amount: number },
+) {
+  const current = calcNisaUsage(holdings, year)
+  return {
+    growthUsed: current.growthUsed + (addition.nisaType === 'growth' ? addition.amount : 0),
+    tsumitateUsed: current.tsumitateUsed + (addition.nisaType === 'tsumitate' ? addition.amount : 0),
+  }
+}
+
+/** NISA枠の使用額が、成長投資枠・つみたて投資枠・合計のいずれかで上限を超えているかを判定する */
+export function isOverNisaLimit(usage: { growthUsed: number; tsumitateUsed: number }) {
+  return {
+    growth: usage.growthUsed > NISA_LIMITS.growth,
+    tsumitate: usage.tsumitateUsed > NISA_LIMITS.tsumitate,
+    total: usage.growthUsed + usage.tsumitateUsed > NISA_LIMITS.total,
+  }
 }
 
 export function formatCurrency(value: number): string {
