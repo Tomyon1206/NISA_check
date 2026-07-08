@@ -112,6 +112,16 @@ body {
   margin-bottom: 12px;
 }
 
+.holdings-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.holdings-section-header h2 { margin-bottom: 0; }
+.holdings-section-header .btn-secondary { padding: 6px 12px; font-size: 0.78rem; }
+.refresh-status { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px; }
+
 .summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -174,6 +184,49 @@ body {
   margin-bottom: 14px;
 }
 
+.search-status { font-size: 0.75rem; color: var(--text-muted); }
+
+.search-results {
+  list-style: none;
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.search-results li + li { border-top: 1px solid var(--border); }
+.search-results button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: var(--surface2);
+  border: none;
+  color: var(--text);
+  padding: 10px 12px;
+  cursor: pointer;
+  font: inherit;
+}
+.search-results button:hover { background: var(--surface); }
+.search-result-name { font-size: 0.9rem; font-weight: 600; }
+.search-result-symbol { font-size: 0.75rem; color: var(--text-muted); }
+
+.selected-ticker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.selected-ticker strong { display: block; font-size: 0.95rem; }
+.selected-ticker .holding-ticker { margin-top: 2px; }
+.selected-ticker .btn-secondary { padding: 6px 12px; font-size: 0.78rem; white-space: nowrap; }
+
 /* ===== Holdings ===== */
 .holdings-grid { display: flex; flex-direction: column; gap: 12px; }
 
@@ -222,9 +275,7 @@ body {
   margin-bottom: 10px;
 }
 
-.holding-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
-.price-fetch-status { font-size: 0.72rem; color: var(--text-muted); margin-right: auto; }
-.price-fetch-status.error { color: var(--negative); }
+.holding-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
 /* ===== Form ===== */
 .holding-form h2 { font-size: 1.1rem; margin-bottom: 16px; }

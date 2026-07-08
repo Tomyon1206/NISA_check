@@ -10,17 +10,18 @@ src/
   types/index.ts          # 型定義（Holding, NisaType, NISA_LIMITS）
   utils/calculations.ts   # 損益・サマリー・NISA枠の計算関数
   utils/holdingsIO.ts     # インポートJSONのバリデーション
-  utils/priceApi.ts       # /api/price 経由での現在値取得
+  utils/priceApi.ts       # /api/price（現在値取得）, /api/stockSearch（銘柄検索）のラッパー
   hooks/useHoldings.ts    # 銘柄CRUD + localStorage永続化
   components/
-    HoldingForm.tsx       # 銘柄追加／編集フォーム（数量は整数のみ、NISA枠超過を警告）
-    HoldingCard.tsx       # 銘柄1件のカード表示（「現在値更新」ボタンで自動取得）
+    HoldingForm.tsx       # 銘柄追加フォーム（銘柄名/ティッカーで検索・選択→数量（口）等入力、NISA枠超過を警告）
+    HoldingCard.tsx       # 銘柄1件のカード表示（現在値更新は一括更新ボタンに統合済み）
     DataActions.tsx       # 保有銘柄データのJSON書き出し/読み込み
     Summary.tsx           # ポートフォリオ合計サマリー
     NisaGauge.tsx         # NISA枠プログレスバー（上限超過時はエラー表示）
-  App.tsx                 # ルートコンポーネント・状態管理
+  App.tsx                 # ルートコンポーネント・状態管理・全銘柄の現在値一括更新
   index.css               # ダークテーマCSS（CSS変数ベース）
-api/price.ts               # Vercel Serverless Function（Yahoo Financeを代理取得しCORSを回避）
+api/price.ts               # Vercel Serverless Function（Yahoo Financeの現在値を代理取得しCORSを回避）
+api/stockSearch.ts         # Vercel Serverless Function（Yahoo Financeの銘柄検索を代理取得）
 docs/stock-api-research.md # 株価API調査メモ
 ```
 
@@ -46,10 +47,16 @@ npm run lint    # ESLintチェック
 - `localStorage` の `nisa-portfolio-holdings` キーに JSON 保存
 - `useHoldings` フックが読み書きを担当
 
-## 現在値の自動取得
-- `HoldingForm`での銘柄追加時、および`HoldingCard`の「現在値更新」ボタン押下時に`/api/price?ticker=...`（Vercel Serverless Function）を呼び出して現在値を取得する
-- サーバーレス関数はYahoo Financeのチャートエンドポイントをサーバー側で叩くことでブラウザ側のCORS制約を回避している（詳細はdocs/stock-api-research.md）
-- 取得に失敗した場合は購入単価を仮の現在値として設定し、その旨をフォーム/カードに表示する（取得失敗時も操作をブロックしない）
+## 銘柄検索・選択
+- `HoldingForm`では銘柄名/ティッカーを自由入力する代わりに、`/api/stockSearch?q=...`（Yahoo Finance検索を代理取得）で候補を検索し、一覧から選択する方式にしている
+- 選択した銘柄の`symbol`/`name`がそのまま`Holding.ticker`/`Holding.name`として保存される
+- 銘柄未選択の状態では数量等の入力欄・追加ボタンを表示しない（選択後にのみ表示）
+
+## 現在値の自動取得・一括更新
+- `HoldingForm`での銘柄追加時に`/api/price?ticker=...`（Vercel Serverless Function）を呼び出して現在値を自動取得する
+- 保有銘柄一覧の「全銘柄の現在値を更新」ボタン（`App.tsx`の`handleRefreshAll`）で、保有中の全銘柄をまとめて再取得する。銘柄カード個別の更新ボタンは廃止し、この一括更新に統合した
+- サーバーレス関数はYahoo Financeのエンドポイントをサーバー側で叩くことでブラウザ側のCORS制約を回避している（詳細はdocs/stock-api-research.md）
+- 取得に失敗した場合は購入単価を仮の現在値として設定する（追加時）か、その銘柄だけ更新をスキップする（一括更新時）。いずれも結果件数をメッセージで表示する
 
 ## スタイリング方針
 - CSS変数（`:root`）でダークテーマを一元管理
