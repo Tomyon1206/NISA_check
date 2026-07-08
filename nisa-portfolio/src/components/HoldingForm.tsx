@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Holding, NisaType } from '../types'
 import { calcProjectedNisaUsage, formatCurrency, isOverNisaLimit } from '../utils/calculations'
-import { fetchCurrentPrice, searchTickers, type TickerSearchResult } from '../utils/priceApi'
+import { fetchCurrentPrice, fetchHistoricalPrice, searchTickers, type TickerSearchResult } from '../utils/priceApi'
 
 interface Props {
   existingHoldings: Holding[]
@@ -43,6 +43,15 @@ export function HoldingForm({ existingHoldings, editingHolding, onAdd, onCancel 
   const [submitting, setSubmitting] = useState(false)
   const [priceNotice, setPriceNotice] = useState<string | null>(null)
 
+  // 購入日の終値の自動取得（銘柄・購入日が編集時の初期値のまま変わっていない間はスキップし、
+  // 既存の購入単価を上書きしないようにする）
+  const [fetchingHistorical, setFetchingHistorical] = useState(false)
+  const [historicalNotice, setHistoricalNotice] = useState<string | null>(null)
+  const [historicalError, setHistoricalError] = useState<string | null>(null)
+  const initialSignatureRef = useRef(
+    editingHolding ? `${editingHolding.ticker}|${editingHolding.purchaseDate}` : null,
+  )
+
   useEffect(() => {
     if (selected) return
     if (!query.trim()) {
@@ -67,6 +76,41 @@ export function HoldingForm({ existingHoldings, editingHolding, onAdd, onCancel 
     }, 350)
     return () => window.clearTimeout(debounceRef.current)
   }, [query, selected])
+
+  useEffect(() => {
+    if (!selected || !details.purchaseDate) return
+
+    const signature = `${selected.symbol}|${details.purchaseDate}`
+    if (initialSignatureRef.current === signature) {
+      // 編集時の初期値（銘柄・購入日とも未変更）なら、既存の購入単価を保持する
+      return
+    }
+
+    let cancelled = false
+    setFetchingHistorical(true)
+    setHistoricalError(null)
+    setHistoricalNotice(null)
+
+    fetchHistoricalPrice(selected.symbol, details.purchaseDate)
+      .then((result) => {
+        if (cancelled) return
+        setDetails((f) => ({ ...f, purchasePrice: String(result.price) }))
+        setHistoricalNotice(
+          result.matchedDate === details.purchaseDate
+            ? `購入日の終値（${formatCurrency(result.price)}）を自動取得しました`
+            : `指定日は非営業日のため、直近の取引日（${result.matchedDate}）の終値（${formatCurrency(result.price)}）を取得しました`,
+        )
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setHistoricalError(err instanceof Error ? err.message : '購入日の終値取得に失敗しました。手動で入力してください')
+      })
+      .finally(() => {
+        if (!cancelled) setFetchingHistorical(false)
+      })
+
+    return () => { cancelled = true }
+  }, [selected, details.purchaseDate])
 
   const nisaWarning = useMemo(() => {
     const quantity = Number(details.quantity)
@@ -209,9 +253,15 @@ export function HoldingForm({ existingHoldings, editingHolding, onAdd, onCancel 
               <option value="tsumitate">つみたて投資枠</option>
             </select>
           </div>
-          {field('数量（口）*', 'quantity', 'number', { min: '1', step: '1', inputMode: 'numeric' })}
-          {field('購入単価（円）*', 'purchasePrice', 'number', { min: '0.01', step: '0.01' })}
+
           {field('購入日 *', 'purchaseDate', 'date')}
+
+          {field('購入単価（円）* （購入日の終値を自動取得）', 'purchasePrice', 'number', { min: '0.01', step: '0.01' })}
+          {fetchingHistorical && <span className="search-status">購入日の終値を取得中…</span>}
+          {historicalNotice && <p className="form-hint">{historicalNotice}</p>}
+          {historicalError && <span className="error">{historicalError}</span>}
+
+          {field('数量（口）*', 'quantity', 'number', { min: '1', step: '1', inputMode: 'numeric' })}
 
           {nisaWarning && <p className="form-warning" role="alert">⚠ {nisaWarning}</p>}
           {priceNotice && <p className="form-warning" role="status">{priceNotice}</p>}

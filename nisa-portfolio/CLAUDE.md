@@ -10,10 +10,10 @@ src/
   types/index.ts          # 型定義（Holding, NisaType, NISA_LIMITS）
   utils/calculations.ts   # 損益・サマリー・NISA枠の計算関数
   utils/holdingsIO.ts     # インポートJSONのバリデーション
-  utils/priceApi.ts       # /api/price（現在値取得）, /api/stockSearch（銘柄検索）のラッパー
+  utils/priceApi.ts       # /api/price（現在値取得）, /api/stockSearch（銘柄検索）, /api/historicalPrice（購入日の終値取得）のラッパー
   hooks/useHoldings.ts    # 銘柄CRUD + localStorage永続化
   components/
-    HoldingForm.tsx       # 銘柄追加フォーム（銘柄名/ティッカーで検索・選択→数量（口）等入力、NISA枠超過を警告）
+    HoldingForm.tsx       # 銘柄追加/編集フォーム（銘柄名/ティッカーで検索・選択→購入日入力で終値を自動取得→数量（口）等入力、NISA枠超過を警告）
     HoldingCard.tsx       # 銘柄1件のカード表示（現在値更新は一括更新ボタンに統合済み）
     DataActions.tsx       # 保有銘柄データのJSON書き出し/読み込み
     Summary.tsx           # ポートフォリオ合計サマリー
@@ -22,6 +22,7 @@ src/
   index.css               # ダークテーマCSS（CSS変数ベース）
 api/price.ts               # Vercel Serverless Function（Yahoo Financeの現在値を代理取得しCORSを回避）
 api/stockSearch.ts         # Vercel Serverless Function（Yahoo Financeの銘柄検索を代理取得）
+api/historicalPrice.ts     # Vercel Serverless Function（指定日=購入日の終値を代理取得）
 docs/stock-api-research.md # 株価API調査メモ
 ```
 
@@ -51,6 +52,12 @@ npm run lint    # ESLintチェック
 - `HoldingForm`では銘柄名/ティッカーを自由入力する代わりに、`/api/stockSearch?q=...`（Yahoo Finance検索を代理取得）で候補を検索し、一覧から選択する方式にしている
 - 選択した銘柄の`symbol`/`name`がそのまま`Holding.ticker`/`Holding.name`として保存される
 - 銘柄未選択の状態では数量等の入力欄・追加ボタンを表示しない（選択後にのみ表示）
+
+## 購入単価の自動取得（購入日の終値）
+- 購入単価は「実際に買った値段」を表すため手入力可能だが、`HoldingForm`で銘柄選択・購入日入力が揃うと`/api/historicalPrice?ticker=...&date=...`で購入日の終値を自動取得し、購入単価欄に反映する
+- 対象日が土日・祝日等の非営業日の場合は直近の取引日の終値にフォールバックし、その旨をメッセージで表示する
+- 編集フォームを開いた直後（銘柄・購入日が編集前の値のまま）は自動取得を行わず、既存の購入単価を保持する。銘柄または購入日を変更すると自動取得が走る
+- 自動取得後も手入力で上書き可能（実売買価格が終値と異なる場合など）
 
 ## 現在値の自動取得・一括更新
 - `HoldingForm`での銘柄追加時に`/api/price?ticker=...`（Vercel Serverless Function）を呼び出して現在値を自動取得する
